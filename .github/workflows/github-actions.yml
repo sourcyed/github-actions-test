@@ -62,11 +62,6 @@ jobs:
     needs: build-server
     runs-on: ubuntu-latest
     env:
-      POSTGRES_USER: app
-      POSTGRES_PASSWORD: app_pw
-      POSTGRES_DB: app_db
-      POSTGRES_PORT: 5432
-      POSTGRES_HOST: postgres
       PGHOST: postgres
       PGPORT: '5432'
       PGUSER: app
@@ -75,6 +70,11 @@ jobs:
     services:
       postgres:
         image: postgres
+        env:
+          POSTGRES_USER: app
+          POSTGRES_PASSWORD: app_pw
+          POSTGRES_DB: app_test_db
+          POSTGRES:PORT: 5432
         ports:
           - 5432:5432
         options: >-
@@ -88,7 +88,7 @@ jobs:
         with:
           node-version: '22'
       - run: sudo apt-get update && sudo apt-get install -y postgresql-client
-      - run: psql -h postgres -U app -d app_test_db -f db/init/001-schema.sql
+      - run: psql -h localhost -U app -d app_test_db -f db/init/001-schema.sql
       - name: Test server
         working-directory: ./server
         run: |
@@ -99,11 +99,6 @@ jobs:
     needs: [test-server, build-client]
     runs-on: ubuntu-latest
     env:
-      POSTGRES_USER: app
-      POSTGRES_PASSWORD: app_pw
-      POSTGRES_DB: app_db
-      POSTGRES_PORT: 5432
-      POSTGRES_HOST: postgres
       PGHOST: postgres
       PGPORT: '5432'
       PGUSER: app
@@ -113,6 +108,11 @@ jobs:
     services:
       postgres:
         image: postgres
+        env:
+          POSTGRES_USER: app
+          POSTGRES_PASSWORD: app_pw
+          POSTGRES_DB: app_db
+          POSTGRES:PORT: 5432
         ports:
           - 5432:5432
         options: >-
@@ -126,7 +126,7 @@ jobs:
         with:
           node-version: '22'
       - run: sudo apt-get update && sudo apt-get install -y postgresql-client
-      - run: psql -h postgres -U app -d app_db -f db/init/001-schema.sql
+      - run: psql -h localhost -U app -d app_db -f db/init/001-schema.sql
       - name: Run server
         working-directory: ./server
         run: |
