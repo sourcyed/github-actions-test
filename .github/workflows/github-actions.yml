@@ -74,6 +74,9 @@ jobs:
           POSTGRES_USER: app
           POSTGRES_PASSWORD: app_pw
           POSTGRES_DB: app_test_db
+          POSTGRES:PORT: 5432
+        ports:
+          - 5432:5432
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -109,6 +112,9 @@ jobs:
           POSTGRES_USER: app
           POSTGRES_PASSWORD: app_pw
           POSTGRES_DB: app_db
+          POSTGRES:PORT: 5432
+        ports:
+          - 5432:5432
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
