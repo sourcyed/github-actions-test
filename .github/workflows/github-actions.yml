@@ -62,7 +62,7 @@ jobs:
     needs: build-server
     runs-on: ubuntu-latest
     env:
-      PGHOST: postgres
+      PGHOST: localhost
       PGPORT: '5432'
       PGUSER: app
       PGPASSWORD: app_pw
@@ -74,11 +74,10 @@ jobs:
           POSTGRES_USER: app
           POSTGRES_PASSWORD: app_pw
           POSTGRES_DB: app_test_db
-          POSTGRES:PORT: 5432
         ports:
           - 5432:5432
         options: >-
-          --health-cmd pg_isready
+          --health-cmd "pg_isready -U app -d app_test_db"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -88,7 +87,7 @@ jobs:
         with:
           node-version: '22'
       - run: sudo apt-get update && sudo apt-get install -y postgresql-client
-      - run: psql -h localhost -U app -d app_test_db -f db/init/001-schema.sql
+      - run: PGPASSWORD="$PGPASSWORD" psql -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d "$PGDATABASE" -v ON_ERROR_STOP=1 -f db/init/001-schema.sql
       - name: Test server
         working-directory: ./server
         run: |
@@ -99,7 +98,7 @@ jobs:
     needs: [test-server, build-client]
     runs-on: ubuntu-latest
     env:
-      PGHOST: postgres
+      PGHOST: localhost
       PGPORT: '5432'
       PGUSER: app
       PGPASSWORD: app_pw
@@ -112,11 +111,10 @@ jobs:
           POSTGRES_USER: app
           POSTGRES_PASSWORD: app_pw
           POSTGRES_DB: app_db
-          POSTGRES:PORT: 5432
         ports:
           - 5432:5432
         options: >-
-          --health-cmd pg_isready
+          --health-cmd "pg_isready -U app -d app_db"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -126,7 +124,7 @@ jobs:
         with:
           node-version: '22'
       - run: sudo apt-get update && sudo apt-get install -y postgresql-client
-      - run: psql -h localhost -U app -d app_db -f db/init/001-schema.sql
+      - run: PGPASSWORD="$PGPASSWORD" psql -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d "$PGDATABASE" -v ON_ERROR_STOP=1 -f db/init/001-schema.sql
       - name: Run server
         working-directory: ./server
         run: |
