@@ -1,0 +1,147 @@
+name: GitHub Actions Demo
+run-name: ${{ github.actor }} is testing out GitHub Actions 🚀
+on: [push]
+jobs:
+  lint-client:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+      - name: Lint client
+        working-directory: ./client
+        run: |
+          ls -la
+          npm ci
+          npm run lint
+
+  build-client:
+    needs: lint-client
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+      - name: Build client
+        working-directory: ./client
+        run: |
+          npm ci
+          npm run build
+
+  lint-server:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+      - name: Lint server
+        working-directory: ./server
+        run: |
+          ls -la
+          npm ci
+          npm run lint
+
+  build-server:
+    needs: lint-server
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+      - name: Build server
+        working-directory: ./server
+        run: |
+          npm ci
+          npm run build
+
+  test-server:
+    needs: build-server
+    runs-on: ubuntu-latest
+    env:
+      PGHOST: localhost
+      PGPORT: '5432'
+      PGUSER: app
+      PGPASSWORD: app_pw
+      PGDATABASE: app_test_db
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_USER: app
+          POSTGRES_PASSWORD: app_pw
+          POSTGRES_DB: app_test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U app -d app_test_db"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+      - run: sudo apt-get update && sudo apt-get install -y postgresql-client
+      - run: PGPASSWORD="$PGPASSWORD" psql -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d "$PGDATABASE" -v ON_ERROR_STOP=1 -f db/init/001-schema.sql
+      - name: Test server
+        working-directory: ./server
+        run: |
+          npm ci
+          npm test
+
+  test-e2e:
+    needs: [test-server, build-client]
+    runs-on: ubuntu-latest
+    env:
+      PGHOST: localhost
+      PGPORT: '5432'
+      PGUSER: app
+      PGPASSWORD: app_pw
+      PGDATABASE: app_db
+      E2E_BASE_URL: 'http://localhost:4173'
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_USER: app
+          POSTGRES_PASSWORD: app_pw
+          POSTGRES_DB: app_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U app -d app_db"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+      - run: sudo apt-get update && sudo apt-get install -y postgresql-client
+      - run: PGPASSWORD="$PGPASSWORD" psql -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d "$PGDATABASE" -v ON_ERROR_STOP=1 -f db/init/001-schema.sql
+      - name: Run server
+        working-directory: ./server
+        run: |
+          npm ci
+          npm run start:ci &
+      - name: Run client
+        working-directory: ./client
+        run: |
+          npm ci
+          npx playwright install --with-deps
+          npm run build
+          npx vite preview --port 4173 --host &
+          sleep 5
+          npx playwright test
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 30

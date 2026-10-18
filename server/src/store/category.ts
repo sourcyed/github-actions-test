@@ -1,0 +1,40 @@
+import { pool } from "../db/pool.js";
+import type { Category, NewCategory } from "../types/category.js";
+
+export async function getCategories(): Promise<Category[]> {
+	const { rows } = await pool.query("SELECT id, name FROM categories");
+	return rows;
+}
+
+export async function addCategory(newCategory: NewCategory): Promise<Category> {
+	const { rows } = await pool.query(
+		`INSERT INTO categories (name)
+    VALUES ($1)
+    RETURNING id,name`,
+		[newCategory.name],
+	);
+	return rows[0];
+}
+
+export async function updateCategory(
+	id: string,
+	update: NewCategory,
+): Promise<Category | null> {
+	const { rows } = await pool.query(
+		`UPDATE categories
+    SET name = $1
+    WHERE id = $2
+    RETURNING id and name`,
+		[update.name, id],
+	);
+	return rows[0] ?? null;
+}
+
+export async function deleteCategory(id: string): Promise<boolean> {
+	const { rowCount } = await pool.query(
+		`DELETE FROM categories
+    WHERE id = $1`,
+		[id],
+	);
+	return rowCount !== null && rowCount > 0;
+}
