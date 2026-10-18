@@ -85,7 +85,7 @@ jobs:
         with:
           node-version: '22'
       - run: sudo apt-get update && sudo apt-get install -y postgresql-client
-      - run: psql -h postgres -U app -d app_test_db -f db/init/001-schema.sql
+      - run: psql -h localhost -U app -d app_test_db -f db/init/001-schema.sql
       - name: Test server
         working-directory: ./server
         run: |
@@ -120,7 +120,7 @@ jobs:
         with:
           node-version: '22'
       - run: sudo apt-get update && sudo apt-get install -y postgresql-client
-      - run: psql -h postgres -U app -d app_db -f db/init/001-schema.sql
+      - run: psql -h localhost -U app -d app_db -f db/init/001-schema.sql
       - name: Run server
         working-directory: ./server
         run: |
