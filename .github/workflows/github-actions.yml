@@ -9,10 +9,12 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: '22'
-      - run: cd client
-      - run: ls -la
-      - run: npm ci
-      - run: npm run lint
+      - name: Lint client
+        working-directory: ./client
+        run: |
+          ls -la
+          npm ci
+          npm run lint
 
   build-client:
     needs: lint-client
@@ -22,9 +24,11 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: '22'
-      - run: cd client
-      - run: npm ci
-      - run: npm run build
+      - name: Build client
+        working-directory: ./client
+        run: |
+          npm ci
+          npm run build
 
   lint-server:
     runs-on: ubuntu-latest
@@ -33,10 +37,12 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: '22'
-      - run: cd server
-      - run: ls -la
-      - run: npm ci
-      - run: npm run lint
+      - name: Lint server
+        working-directory: ./server
+        run: |
+          ls -la
+          npm ci
+          npm run lint
 
   build-server:
     needs: lint-server
@@ -46,9 +52,11 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: '22'
-      - run: cd server
-      - run: npm ci
-      - run: npm run build
+      - name: Build server
+        working-directory: ./server
+        run: |
+          npm ci
+          npm run build
 
   test-server:
     needs: build-server
@@ -78,9 +86,11 @@ jobs:
           node-version: '22'
       - run: apt-get update && apt-get install -y postgresql-client
       - run: psql -h postgres -U app -d app_test_db -f db/init/001-schema.sql
-      - run: cd server
-      - run: npm ci
-      - run: npm test
+      - name: Test server
+        working-directory: ./server
+        run: |
+          npm ci
+          npm test
 
   test-e2e:
     needs: [test-server, build-client]
@@ -111,14 +121,20 @@ jobs:
           node-version: '22'
       - run: apt-get update && apt-get install -y postgresql-client
       - run: psql -h postgres -U app -d app_db -f db/init/001-schema.sql
-      - run: cd server && npm ci
-      - run: npm run start:ci &
-      - run: cd ../client && npm ci
-      - run: npx playwright install --with-deps
-      - run: npm run build
-      - run: npx vite preview --port 4173 --host &
-      - run: sleep 5
-      - run: npx playwright test
+      - name: Run server
+        working-directory: ./server
+        run: |
+          npm ci
+          npm run start:ci &
+      - name: Run client
+        working-directory: ./client
+        run: |
+          npm ci
+          npx playwright install --with-deps
+          npm run build
+          npx vite preview --port 4173 --host &
+          sleep 5
+          npx playwright test
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
         with:
