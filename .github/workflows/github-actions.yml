@@ -10,6 +10,7 @@ jobs:
         with:
           node-version: '22'
       - run: cd client
+      - run: ls -la
       - run: npm ci
       - run: npm run lint
 
@@ -33,6 +34,7 @@ jobs:
         with:
           node-version: '22'
       - run: cd server
+      - run: ls -la
       - run: npm ci
       - run: npm run lint
 
